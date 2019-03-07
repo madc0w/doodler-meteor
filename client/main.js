@@ -1,5 +1,11 @@
-var context = null;
+
+const black = "rgba(0, 0, 0, 255)";
+const white = "rgba(255, 255, 255, 255)";
+
 var canvas = null;
+var inputCanvas = null;
+var context = null;
+var inputContext = null;
 var imageDimensions = null;
 
 Template.main.helpers({
@@ -10,19 +16,9 @@ Template.main.helpers({
 Template.main.events({
 	"change #contrast-range" : function(e) {
 		if (imageDimensions) {
-
-			const black = "rgba(0,0,0,255)";
-			const white = "rgba(255,255,255,255)";
-
-			//			const black = context.createImageData(1, 1);
-			//			black.data = [ 0, 0, 0, 0 ];
-			//			const white = context.createImageData(1, 1);
-			//			white.data = [ (1 << 8) - 1, (1 << 8) - 1, (1 << 8) - 1, 0 ];
-
 			const contrast = parseInt(e.target.value);
 			const cutoff = (1 << 8) * contrast / 100;
-			const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-			//			console.log(imageData);
+			const imageData = inputContext.getImageData(0, 0, canvas.width, canvas.height);
 			var offset = 0;
 			for (var y = 0; y < imageData.height; y++) {
 				console.log("% done", (y / imageData.height) * 100);
@@ -36,7 +32,6 @@ Template.main.events({
 
 					context.fillStyle = value < cutoff ? black : white;
 					context.fillRect(x, y, 1, 1);
-					//					context.putImageData(value < cutoff ? black : white, x, y);
 
 					//					// RGB
 					//					//					const offset = ((y * (imageData.width * 4)) + (x * 4));
@@ -80,6 +75,7 @@ Template.main.events({
 						height : img.height * $(canvas).width() / img.width
 					}
 					context.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
+					inputContext.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
 				//						alert(canvas.toDataURL("image/png"));
 				};
 				img.src = fr.result;
@@ -105,10 +101,14 @@ Template.main.events({
 
 
 Template.main.onRendered(function() {
+	const canvasWidth = innerWidth - $("#controls").width() - 42;
+	inputCanvas = $("#input-canvas")[0];
+	inputCanvas.setAttribute("width", canvasWidth);
 	canvas = $("#output-canvas")[0];
-	canvas.setAttribute("width", innerWidth - $("#controls").width() - 42)
+	canvas.setAttribute("width", canvasWidth);
 	//	$("#output-canvas").width(innerWidth - $("#controls").width() - 42);
 	context = canvas.getContext("2d");
+	inputContext = inputCanvas.getContext("2d");
 });
 
 

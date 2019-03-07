@@ -39,6 +39,10 @@ body {
 	border-radius: 6px;
 }
 
+#input-canvas {
+	display: none;
+}
+
 #file-chooser-container {
 	padding-bottom: 16px;
 }
