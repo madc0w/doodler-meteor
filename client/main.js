@@ -21,7 +21,8 @@ Template.main.events({
 			const imageData = inputContext.getImageData(0, 0, canvas.width, canvas.height);
 			var offset = 0;
 			for (var y = 0; y < imageData.height; y++) {
-				console.log("% done", (y / imageData.height) * 100);
+				setProgress(y / imageData.height);
+				//				console.log("% done", (y / imageData.height) * 100);
 				for (var x = 0; x < imageData.width; x++) {
 					// turns out value is just max of R, G, B
 					const value = Math.max(
@@ -44,6 +45,7 @@ Template.main.events({
 					offset++;
 				}
 			}
+			setProgress(1);
 		}
 	},
 
@@ -131,4 +133,9 @@ function rgb2hsv(color) {
 	const computedH = 60 * (h - d / (maxRGB - minRGB));
 	const computedS = (maxRGB - minRGB) / maxRGB;
 	return [ computedH, computedS, computedV ];
+}
+
+function setProgress(progress) {
+	$("#progress").css("width", (progress * 100) + "%");
+	$("#progress-container").css("display", progress >= 1 ? "none" : "block");
 }
