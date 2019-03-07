@@ -76,7 +76,7 @@ body {
 }
 
 #progress-container {
-	display: none;
+/* 	display: none; */
 	width: 100%;
 	background-color: #aaa;
 	height: 16px;
@@ -87,7 +87,7 @@ body {
 	border-color: #ddd;
 }
 
-#progress {
-	background-color: orange;
-	height: 20px;
-}
+/* #progress { */
+/* 	background-color: orange; */
+/* 	height: 16px; */
+/* } */
