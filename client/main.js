@@ -31,6 +31,7 @@ Template.main.events({
 		} else if (!input.files[0]) {
 			alert("Please select a file before clicking 'Load'");
 		} else {
+			showSpinner();
 			const file = input.files[0];
 			const fr = new FileReader();
 			fr.onload = function() {
@@ -42,7 +43,8 @@ Template.main.events({
 					}
 					context.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
 					inputContext.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
-				//						alert(canvas.toDataURL("image/png"));
+					//						alert(canvas.toDataURL("image/png"));
+					hideSpinner();
 				};
 				img.src = fr.result;
 			};
@@ -110,55 +112,64 @@ function rgb2hsv(color) {
 
 function updateContrast() {
 	if (imageDimensions) {
-		//		context.fillStyle = value < cutoff ? black : white;
-		//		context.fillRect(0, 0, canvas.width, canvas.height);
-
-		const contrast = parseInt($("#contrast-range").val());
-		const cutoff = (1 << 8) * contrast / 100;
-		const imageData = inputContext.getImageData(0, 0, canvas.width, canvas.height);
-		const contrastType = $("[name='contrast-type']:checked").val();
-		var offset = 0;
-		for (var y = 0; y < imageData.height; y++) {
-			//				setProgress(y / imageData.height);
-			console.log("% done", (y / imageData.height) * 100);
-			for (var x = 0; x < imageData.width; x++) {
-				var value;
-				if (contrastType == "val") {
-					// turns out value is just max of R, G, B
-					value = Math.max(
-						imageData.data[offset++],
-						imageData.data[offset++],
-						imageData.data[offset++]
-					);
-				} else {
-					const color = {
-						red : imageData.data[offset++],
-						green : imageData.data[offset++],
-						blue : imageData.data[offset++]
-					};
-					const hsv = rgb2hsv(color);
-					if (contrastType == "sat") {
-						value = hsv[1];
-					} else if (contrastType == "hue") {
-						value = hsv[0];
-					//							console.log("hue", value);
+		showSpinner();
+		Meteor.setTimeout(() => {
+			const contrast = parseInt($("#contrast-range").val());
+			const cutoff = (1 << 8) * contrast / 100;
+			const imageData = inputContext.getImageData(0, 0, canvas.width, canvas.height);
+			const contrastType = $("[name='contrast-type']:checked").val();
+			var offset = 0;
+			for (var y = 0; y < imageData.height; y++) {
+				//				setProgress(y / imageData.height);
+				console.log("% done", (y / imageData.height) * 100);
+				for (var x = 0; x < imageData.width; x++) {
+					var value;
+					if (contrastType == "val") {
+						// turns out value is just max of R, G, B
+						value = Math.max(
+							imageData.data[offset++],
+							imageData.data[offset++],
+							imageData.data[offset++]
+						);
+					} else {
+						const color = {
+							red : imageData.data[offset++],
+							green : imageData.data[offset++],
+							blue : imageData.data[offset++]
+						};
+						const hsv = rgb2hsv(color);
+						if (contrastType == "sat") {
+							value = hsv[1];
+						} else if (contrastType == "hue") {
+							value = hsv[0];
+						//							console.log("hue", value);
+						}
+						value <<= 8;
 					}
-					value <<= 8;
-				}
-				context.fillStyle = value < cutoff ? black : white;
-				context.fillRect(x, y, 1, 1);
+					context.fillStyle = value < cutoff ? black : white;
+					context.fillRect(x, y, 1, 1);
 
-				//					// RGB
-				//					//					const offset = ((y * (imageData.width * 4)) + (x * 4));
-				//					const color = [
-				//						imageData.data[offset++],
-				//						imageData.data[offset++],
-				//						imageData.data[offset++]
-				//					];
-				//					color.alpha = imageData.data[((y * (imageData.width * 4)) + (x * 4)) + 3];
-				offset++;
+					//					// RGB
+					//					//					const offset = ((y * (imageData.width * 4)) + (x * 4));
+					//					const color = [
+					//						imageData.data[offset++],
+					//						imageData.data[offset++],
+					//						imageData.data[offset++]
+					//					];
+					//					color.alpha = imageData.data[((y * (imageData.width * 4)) + (x * 4)) + 3];
+					offset++;
+				}
 			}
-		}
-	//			setProgress(1);
+			//			setProgress(1);
+			hideSpinner();
+		}, 0);
 	}
+}
+
+function showSpinner() {
+	$("#spinner").css("display", "block");
+}
+
+function hideSpinner() {
+	$("#spinner").css("display", "none");
 }
