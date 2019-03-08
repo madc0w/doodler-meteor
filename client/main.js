@@ -96,7 +96,7 @@ function rgb2hsv(color) {
 	// Colors other than black-gray-white:
 	const d = r == minRGB ? g - b : (b == minRGB ? r - g : b - r);
 	const h = r == minRGB ? 3 : (b == minRGB ? 1 : 5);
-	const computedH = 60 * (h - d / (maxRGB - minRGB));
+	const computedH = (h - d / (maxRGB - minRGB)) / 4;
 	const computedS = (maxRGB - minRGB) / maxRGB;
 	return [ computedH, computedS, computedV ];
 }
@@ -115,13 +115,17 @@ function updateContrast() {
 		showSpinner();
 		Meteor.setTimeout(() => {
 			const contrast = parseInt($("#contrast-range").val());
-			const cutoff = (1 << 8) * contrast / 100;
 			const imageData = inputContext.getImageData(0, 0, canvas.width, canvas.height);
 			const contrastType = $("[name='contrast-type']:checked").val();
+			var cutoff = contrast / 100;
+			if (contrastType == "val") {
+				cutoff *= 1 << 8;
+			}
+			//			console.log("cutoff ", cutoff);
 			var offset = 0;
 			for (var y = 0; y < imageData.height; y++) {
 				//				setProgress(y / imageData.height);
-				console.log("% done", (y / imageData.height) * 100);
+				//				console.log("% done", (y / imageData.height) * 100);
 				for (var x = 0; x < imageData.width; x++) {
 					var value;
 					if (contrastType == "val") {
@@ -142,9 +146,10 @@ function updateContrast() {
 							value = hsv[1];
 						} else if (contrastType == "hue") {
 							value = hsv[0];
-						//							console.log("hue", value);
 						}
-						value <<= 8;
+					//						if (Math.random() < 0.02) {
+					//							console.log("value ", value);
+					//						}
 					}
 					context.fillStyle = value < cutoff ? black : white;
 					context.fillRect(x, y, 1, 1);
