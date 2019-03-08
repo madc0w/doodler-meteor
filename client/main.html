@@ -10,21 +10,32 @@
 <div id="main">
 	<div id="controls">
 		<div id="file-chooser-container">
-			<label id="file-chooser-label">Choose Image File 
+			<label id="file-chooser-label" class="button">Choose Image File 
 				<input type="file" id="image-file-chooser" />
 			</label>
 		</div>
-		<div>
-			<input type="radio" name="contrast-type" value="hue" id="contrast-type-hue">
-			<label for="contrast-type-hue">Hue</label>
-			<input type="radio" name="contrast-type" value="sat" id="contrast-type-sat">
-			<label for="contrast-type-sat">Saturation</label>
-			<input type="radio" name="contrast-type" value="val" id="contrast-type-val" checked>
-			<label for="contrast-type-val">Value</label>
-		</div>
-		<div id="slider-container">
-			<input type="range" min="1" max="100" value="50" class="slider" id="contrast-range">
-		</div>
+		{{#if isImageLoaded}}
+			<div>
+				<label>
+					<input type="radio" name="contrast-type" value="hue" id="contrast-type-hue">
+					Hue
+				</label>
+				<label>
+					<input type="radio" name="contrast-type" value="sat" id="contrast-type-sat">
+					Saturation
+				</label>
+				<label >
+					<input type="radio" name="contrast-type" value="val" id="contrast-type-val" checked>
+					Value
+				</label>
+			</div>
+			<div id="slider-container">
+				<input type="range" min="1" max="100" value="50" class="slider" id="contrast-range">
+			</div>
+			{{#if isContrastComputed}}
+				<div id="find-contours-button" class="button">Find Contours</div>
+			{{/if}}
+		{{/if}}
 		<div id="spinner">
 			<img src="spinner.gif"/>		
 		</div>

@@ -1,6 +1,9 @@
 const black = "#000000";
 const white = "#ffffff";
 
+const isContrastComputed = new ReactiveVar(false);
+const isImageLoaded = new ReactiveVar(false);
+
 var canvas = null;
 var inputCanvas = null;
 var context = null;
@@ -8,8 +11,13 @@ var inputContext = null;
 var imageDimensions = null;
 
 Template.main.helpers({
+	isImageLoaded : function() {
+		return isImageLoaded.get();
+	},
 
-
+	isContrastComputed : function() {
+		return isContrastComputed.get();
+	},
 });
 
 Template.main.events({
@@ -18,6 +26,7 @@ Template.main.events({
 	"change input[name='contrast-type']" : updateContrast,
 
 	"change #image-file-chooser" : function(e) {
+		isImageLoaded.set(false);
 		if (typeof window.FileReader !== "function") {
 			alert("The file API isn't supported on this browser yet.");
 			return;
@@ -27,9 +36,9 @@ Template.main.events({
 		if (!input) {
 			alert("Um, couldn't find the imgfile element.");
 		} else if (!input.files) {
-			alert("This browser doesn't seem to support the `files` property of file inputs.");
+			alert("This browser doesn't seem to support the 'files' property of file inputs.");
 		} else if (!input.files[0]) {
-			alert("Please select a file before clicking 'Load'");
+			alert("Please select a file before clicking 'Load'.");
 		} else {
 			showSpinner();
 			const file = input.files[0];
@@ -44,6 +53,7 @@ Template.main.events({
 					context.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
 					inputContext.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
 					//						alert(canvas.toDataURL("image/png"));
+					isImageLoaded.set(true);
 					hideSpinner();
 				};
 				img.src = fr.result;
@@ -111,6 +121,7 @@ function rgb2hsv(color) {
 //}
 
 function updateContrast() {
+	isContrastComputed.set(false);
 	if (imageDimensions) {
 		showSpinner();
 		Meteor.setTimeout(() => {
@@ -166,6 +177,7 @@ function updateContrast() {
 				}
 			}
 			//			setProgress(1);
+			isContrastComputed.set(true);
 			hideSpinner();
 		}, 0);
 	}
