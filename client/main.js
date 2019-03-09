@@ -8,7 +8,8 @@ const isContrastComputed = new ReactiveVar(false);
 const isImageLoaded = new ReactiveVar(false);
 const isEdgesComputed = new ReactiveVar(false);
 
-var img = null; // document.createElement("img"); // new Image();
+var img = null;
+var edgeImg = null;
 var canvas = null;
 var inputCanvas = null;
 var context = null;
@@ -58,25 +59,33 @@ Template.main.events({
 		Image.load(canvas.toDataURL()).then(function(image) {
 			const gray = image.gray();
 			const edge = cannyEdgeDetector(gray);
-			console.log(edge);
+
+			edgeImg.onload = function() {
+				context.fillStyle = white;
+				context.fillRect(0, 0, canvas.width, canvas.height);
+				context.drawImage(edgeImg, 0, 0, canvas.width, canvas.height);
+			};
+			edgeImg.src = edge.toDataURL();
+
+		//			console.log(edge);
 		});
 
-		edgePoints = [];
-		const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-		context.fillStyle = white;
-		context.fillRect(0, 0, canvas.width, canvas.height);
-		for (var x = 1; x < canvas.width - 1; x++) {
-			for (y = 1; y < canvas.height - 1; y++) {
-				if (isWhite(getPixel(imageData, x, y)) && (
-					isBlack(getPixel(imageData, x - 1, y)) ||
-					isBlack(getPixel(imageData, x + 1, y)) ||
-					isBlack(getPixel(imageData, x, y - 1)) ||
-					isBlack(getPixel(imageData, x, y + 1)))) {
-					edgePoints.push([ x, y ]);
-					setPixel(context, x, y, black);
-				}
-			}
-		}
+		//		edgePoints = [];
+		//		const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+		//		context.fillStyle = white;
+		//		context.fillRect(0, 0, canvas.width, canvas.height);
+		//		for (var x = 1; x < canvas.width - 1; x++) {
+		//			for (y = 1; y < canvas.height - 1; y++) {
+		//				if (isWhite(getPixel(imageData, x, y)) && (
+		//					isBlack(getPixel(imageData, x - 1, y)) ||
+		//					isBlack(getPixel(imageData, x + 1, y)) ||
+		//					isBlack(getPixel(imageData, x, y - 1)) ||
+		//					isBlack(getPixel(imageData, x, y + 1)))) {
+		//					edgePoints.push([ x, y ]);
+		//					setPixel(context, x, y, black);
+		//				}
+		//			}
+		//		}
 		isEdgesComputed.set(true);
 		hideSpinner();
 	},
@@ -142,6 +151,7 @@ Template.main.events({
 
 Template.main.onRendered(function() {
 	img = $("#input-image")[0];
+	edgeImg = $("#edge-image")[0];
 	inputCanvas = $("#input-canvas")[0];
 	canvas = $("#output-canvas")[0];
 	context = canvas.getContext("2d");

@@ -72,7 +72,7 @@ body {
 	margin-top: 18px;
 }
 
-#input-image {
+.hidden {
 	display: none;
 }
 
