@@ -3,13 +3,15 @@ const white = "#ffffff";
 
 const isContrastComputed = new ReactiveVar(false);
 const isImageLoaded = new ReactiveVar(false);
+const isEdgesComputed = new ReactiveVar(false);
 
+const img = new Image();
 var canvas = null;
 var inputCanvas = null;
 var context = null;
 var inputContext = null;
-var img = null;
 var imageDimensions = null;
+var edgePoints = [];
 
 Template.main.helpers({
 	isImageLoaded : function() {
@@ -19,18 +21,37 @@ Template.main.helpers({
 	isContrastComputed : function() {
 		return isContrastComputed.get();
 	},
+
+	isEdgesComputed : function() {
+		return isEdgesComputed.get();
+	},
 });
 
 Template.main.events({
+	"click #draw-contours-button" : function(e) {
+		const radius = 4;
+		context.fillStyle = black;
+		for (var i in edgePoints) {
+			const point = edgePoints[i];
+			context.beginPath();
+			context.arc(point[0], point[1], radius, 0, 2 * Math.PI);
+			context.fill();
+		}
+
+	},
+
 	"click #reset-button" : function(e) {
 		isContrastComputed.set(false);
+		isEdgesComputed.set(false);
 		context.clearRect(0, 0, canvas.width, canvas.height);
 		context.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
 		inputContext.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
 	},
 
-	"click #find-contours-button" : function(e) {
-		const contour = [];
+	"click #detect-edges-button" : function(e) {
+		showSpinner();
+		isEdgesComputed.set(false);
+		edgePoints = [];
 		const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
 		context.fillStyle = white;
 		context.fillRect(0, 0, canvas.width, canvas.height);
@@ -41,12 +62,13 @@ Template.main.events({
 					isBlack(getPixel(imageData, x + 1, y)) ||
 					isBlack(getPixel(imageData, x, y - 1)) ||
 					isBlack(getPixel(imageData, x, y + 1)))) {
-					contour.push([ x, y ]);
+					edgePoints.push([ x, y ]);
 					setPixel(context, x, y, black);
 				}
 			}
 		}
-
+		isEdgesComputed.set(true);
+		hideSpinner();
 	},
 
 	"change #contrast-range" : updateContrast,
@@ -73,22 +95,6 @@ Template.main.events({
 			const file = input.files[0];
 			const fr = new FileReader();
 			fr.onload = function() {
-				img = new Image();
-				img.onload = function() {
-					imageDimensions = {
-						width : $(canvas).width(),
-						height : img.height * $(canvas).width() / img.width
-					}
-					context.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
-					inputContext.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
-					//						alert(canvas.toDataURL("image/png"));
-					isImageLoaded.set(true);
-					hideSpinner();
-				};
-				img.onerror = function(e) {
-					hideSpinner();
-					alert("Well that failed.\nMaybe this file isn't an image?");
-				};
 				img.src = fr.result;
 			};
 			fr.readAsDataURL(file);
@@ -121,7 +127,24 @@ Template.main.onRendered(function() {
 		c.setAttribute("height", innerHeight - 40);
 	}
 	f(inputCanvas);
-	f(canvas)
+	f(canvas);
+
+	img.onload = function() {
+		imageDimensions = {
+			width : $(canvas).width(),
+			height : img.height * $(canvas).width() / img.width
+		}
+		context.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
+		inputContext.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
+		//						alert(canvas.toDataURL("image/png"));
+		isImageLoaded.set(true);
+		hideSpinner();
+	};
+	img.onerror = function(e) {
+		hideSpinner();
+		alert("Well that failed.\nMaybe this file isn't an image?");
+	};
+
 });
 
 
@@ -159,65 +182,63 @@ function rgb2hsv(color) {
 
 function updateContrast() {
 	isContrastComputed.set(false);
-	if (imageDimensions) {
-		showSpinner();
-		Meteor.setTimeout(() => {
-			const contrast = parseInt($("#contrast-range").val());
-			const imageData = inputContext.getImageData(0, 0, canvas.width, canvas.height);
-			const contrastType = $("[name='contrast-type']:checked").val();
-			var cutoff = contrast / 100;
-			if (contrastType == "val") {
-				cutoff *= 1 << 8;
-			}
-			//			console.log("cutoff ", cutoff);
-			var offset = 0;
-			for (var y = 0; y < imageData.height; y++) {
-				//				setProgress(y / imageData.height);
-				//				console.log("% done", (y / imageData.height) * 100);
-				for (var x = 0; x < imageData.width; x++) {
-					var value;
-					if (contrastType == "val") {
-						// turns out value is just max of R, G, B
-						value = Math.max(
-							imageData.data[offset++],
-							imageData.data[offset++],
-							imageData.data[offset++]
-						);
-					} else {
-						const color = {
-							red : imageData.data[offset++],
-							green : imageData.data[offset++],
-							blue : imageData.data[offset++]
-						};
-						const hsv = rgb2hsv(color);
-						if (contrastType == "sat") {
-							value = hsv[1];
-						} else if (contrastType == "hue") {
-							value = hsv[0];
-						}
-					//						if (Math.random() < 0.02) {
-					//							console.log("value ", value);
-					//						}
+	showSpinner();
+	Meteor.setTimeout(() => {
+		const contrast = parseInt($("#contrast-range").val());
+		const imageData = inputContext.getImageData(0, 0, canvas.width, canvas.height);
+		const contrastType = $("[name='contrast-type']:checked").val();
+		var cutoff = contrast / 100;
+		if (contrastType == "val") {
+			cutoff *= 1 << 8;
+		}
+		//			console.log("cutoff ", cutoff);
+		var offset = 0;
+		for (var y = 0; y < imageData.height; y++) {
+			//				setProgress(y / imageData.height);
+			//				console.log("% done", (y / imageData.height) * 100);
+			for (var x = 0; x < imageData.width; x++) {
+				var value;
+				if (contrastType == "val") {
+					// turns out value is just max of R, G, B
+					value = Math.max(
+						imageData.data[offset++],
+						imageData.data[offset++],
+						imageData.data[offset++]
+					);
+				} else {
+					const color = {
+						red : imageData.data[offset++],
+						green : imageData.data[offset++],
+						blue : imageData.data[offset++]
+					};
+					const hsv = rgb2hsv(color);
+					if (contrastType == "sat") {
+						value = hsv[1];
+					} else if (contrastType == "hue") {
+						value = hsv[0];
 					}
-
-					setPixel(context, x, y, value < cutoff ? black : white);
-
-					//					// RGB
-					//					//					const offset = ((y * (imageData.width * 4)) + (x * 4));
-					//					const color = [
-					//						imageData.data[offset++],
-					//						imageData.data[offset++],
-					//						imageData.data[offset++]
-					//					];
-					//					color.alpha = imageData.data[((y * (imageData.width * 4)) + (x * 4)) + 3];
-					offset++;
+				//						if (Math.random() < 0.02) {
+				//							console.log("value ", value);
+				//						}
 				}
+
+				setPixel(context, x, y, value < cutoff ? black : white);
+
+				//					// RGB
+				//					//					const offset = ((y * (imageData.width * 4)) + (x * 4));
+				//					const color = [
+				//						imageData.data[offset++],
+				//						imageData.data[offset++],
+				//						imageData.data[offset++]
+				//					];
+				//					color.alpha = imageData.data[((y * (imageData.width * 4)) + (x * 4)) + 3];
+				offset++;
 			}
-			//			setProgress(1);
-			isContrastComputed.set(true);
-			hideSpinner();
-		}, 0);
-	}
+		}
+		//			setProgress(1);
+		isContrastComputed.set(true);
+		hideSpinner();
+	}, 40);
 }
 
 function showSpinner() {

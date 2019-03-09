@@ -34,7 +34,12 @@
 			</div>
 			{{#if isContrastComputed}}
 				<div id="reset-button" class="button">Reset</div>
-				<div id="find-contours-button" class="button">Find Contours</div>
+				<div id="detect-edges-button" class="button">Detect Edges</div>
+				{{#if isEdgesComputed}}
+					<div>
+						<div id="draw-contours-button" class="button">Draw Contours</div>
+					</div>
+				{{/if}}
 			{{/if}}
 		{{/if}}
 		<div id="spinner">
