@@ -21,6 +21,26 @@ Template.main.helpers({
 });
 
 Template.main.events({
+	"click #find-contours-button" : function(e) {
+		const contour = [];
+		const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+		context.fillStyle = white;
+		context.fillRect(0, 0, canvas.width, canvas.height);
+		for (var x = 1; x < canvas.width - 1; x++) {
+			for (y = 1; y < canvas.height - 1; y++) {
+				if (isWhite(getPixel(imageData, x, y)) && (
+					isBlack(getPixel(imageData, x - 1, y)) ||
+					isBlack(getPixel(imageData, x + 1, y)) ||
+					isBlack(getPixel(imageData, x, y - 1)) ||
+					isBlack(getPixel(imageData, x, y + 1)))) {
+					contour.push([ x, y ]);
+					setPixel(context, x, y, black);
+				}
+			}
+		}
+
+	},
+
 	"change #contrast-range" : updateContrast,
 
 	"change input[name='contrast-type']" : updateContrast,
@@ -28,19 +48,20 @@ Template.main.events({
 	"change #image-file-chooser" : function(e) {
 		isImageLoaded.set(false);
 		if (typeof window.FileReader !== "function") {
-			alert("The file API isn't supported on this browser yet.");
+			alert("The browser you are using sucks.\nTry using Firefox or Chrome instead.");
 			return;
 		}
 
 		const input = $("#image-file-chooser")[0];
 		if (!input) {
-			alert("Um, couldn't find the imgfile element.");
+			alert("Failed to find the image-file-chooser element.");
 		} else if (!input.files) {
-			alert("This browser doesn't seem to support the 'files' property of file inputs.");
+			alert("The browser you are using sucks.\nTry using Firefox or Chrome instead.");
 		} else if (!input.files[0]) {
 			alert("Please select a file before clicking 'Load'.");
 		} else {
 			showSpinner();
+			context.clearRect(0, 0, canvas.width, canvas.height);
 			const file = input.files[0];
 			const fr = new FileReader();
 			fr.onload = function() {
@@ -55,6 +76,10 @@ Template.main.events({
 					//						alert(canvas.toDataURL("image/png"));
 					isImageLoaded.set(true);
 					hideSpinner();
+				};
+				img.onerror = function(e) {
+					hideSpinner();
+					alert("Well that failed.\nMaybe this file isn't an image?");
 				};
 				img.src = fr.result;
 			};
@@ -79,16 +104,20 @@ Template.main.events({
 
 
 Template.main.onRendered(function() {
-	const canvasWidth = innerWidth - $("#controls").width() - 42;
 	inputCanvas = $("#input-canvas")[0];
-	inputCanvas.setAttribute("width", canvasWidth);
 	canvas = $("#output-canvas")[0];
-	canvas.setAttribute("width", canvasWidth);
-	//	$("#output-canvas").width(innerWidth - $("#controls").width() - 42);
 	context = canvas.getContext("2d");
 	inputContext = inputCanvas.getContext("2d");
+	function f(c) {
+		c.setAttribute("width", innerWidth - $("#controls").width() - 60);
+		c.setAttribute("height", innerHeight - 40);
+	}
+	f(inputCanvas);
+	f(canvas)
 });
 
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
 
 function rgb2hsv(color) {
 	r = color.red / 255;
@@ -162,8 +191,8 @@ function updateContrast() {
 					//							console.log("value ", value);
 					//						}
 					}
-					context.fillStyle = value < cutoff ? black : white;
-					context.fillRect(x, y, 1, 1);
+
+					setPixel(context, x, y, value < cutoff ? black : white);
 
 					//					// RGB
 					//					//					const offset = ((y * (imageData.width * 4)) + (x * 4));
@@ -189,4 +218,27 @@ function showSpinner() {
 
 function hideSpinner() {
 	$("#spinner").css("display", "none");
+}
+
+function getPixel(imageData, x, y) {
+	var offset = 4 * ((y * imageData.width) + x);
+	return {
+		red : imageData.data[offset++],
+		green : imageData.data[offset++],
+		blue : imageData.data[offset++],
+	//		alpha : imageData.data[offset],
+	};
+}
+
+function setPixel(context, x, y, color) {
+	context.fillStyle = color;
+	context.fillRect(x, y, 1, 1);
+}
+
+function isBlack(pixel) {
+	return pixel.red == 0 && pixel.green == 0 && pixel.blue == 0;
+}
+
+function isWhite(pixel) {
+	return pixel.red == 255 && pixel.green == 255 && pixel.blue == 255;
 }
