@@ -8,6 +8,7 @@ var canvas = null;
 var inputCanvas = null;
 var context = null;
 var inputContext = null;
+var img = null;
 var imageDimensions = null;
 
 Template.main.helpers({
@@ -21,6 +22,13 @@ Template.main.helpers({
 });
 
 Template.main.events({
+	"click #reset-button" : function(e) {
+		isContrastComputed.set(false);
+		context.clearRect(0, 0, canvas.width, canvas.height);
+		context.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
+		inputContext.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
+	},
+
 	"click #find-contours-button" : function(e) {
 		const contour = [];
 		const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
@@ -65,7 +73,7 @@ Template.main.events({
 			const file = input.files[0];
 			const fr = new FileReader();
 			fr.onload = function() {
-				const img = new Image();
+				img = new Image();
 				img.onload = function() {
 					imageDimensions = {
 						width : $(canvas).width(),
