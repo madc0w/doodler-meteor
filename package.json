@@ -9,6 +9,10 @@
 	},
 	"dependencies": {
 		"@babel/runtime": "^7.1.5",
+		"canny-edge-detector": "^1.0.0",
+		"canvas": "^2.3.1",
+		"image-js": "^0.21.4",
+		"js-canny-edge-detector": "github:petarjs/js-canny-edge-detector",
 		"meteor-node-stubs": "^0.4.1"
 	}
 }

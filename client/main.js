@@ -1,3 +1,6 @@
+import cannyEdgeDetector from "canny-edge-detector";
+import Image from "image-js";
+
 const black = "#000000";
 const white = "#ffffff";
 
@@ -5,7 +8,7 @@ const isContrastComputed = new ReactiveVar(false);
 const isImageLoaded = new ReactiveVar(false);
 const isEdgesComputed = new ReactiveVar(false);
 
-const img = new Image();
+var img = null; // document.createElement("img"); // new Image();
 var canvas = null;
 var inputCanvas = null;
 var context = null;
@@ -51,6 +54,13 @@ Template.main.events({
 	"click #detect-edges-button" : function(e) {
 		showSpinner();
 		isEdgesComputed.set(false);
+
+		Image.load(canvas.toDataURL()).then(function(image) {
+			const gray = image.gray();
+			const edge = cannyEdgeDetector(gray);
+			console.log(edge);
+		});
+
 		edgePoints = [];
 		const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
 		context.fillStyle = white;
@@ -95,6 +105,19 @@ Template.main.events({
 			const file = input.files[0];
 			const fr = new FileReader();
 			fr.onload = function() {
+				Image.load(fr.result).then(function(image) {
+					imageDimensions = {
+						width : $(canvas).width(),
+						height : image.height * $(canvas).width() / image.width
+					}
+					img.src = image.toDataURL();
+					context.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
+					inputContext.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
+					//						alert(canvas.toDataURL("image/png"));
+					isImageLoaded.set(true);
+					hideSpinner();
+				});
+
 				img.src = fr.result;
 			};
 			fr.readAsDataURL(file);
@@ -118,6 +141,7 @@ Template.main.events({
 
 
 Template.main.onRendered(function() {
+	img = $("#input-image")[0];
 	inputCanvas = $("#input-canvas")[0];
 	canvas = $("#output-canvas")[0];
 	context = canvas.getContext("2d");
@@ -129,17 +153,17 @@ Template.main.onRendered(function() {
 	f(inputCanvas);
 	f(canvas);
 
-	img.onload = function() {
-		imageDimensions = {
-			width : $(canvas).width(),
-			height : img.height * $(canvas).width() / img.width
-		}
-		context.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
-		inputContext.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
-		//						alert(canvas.toDataURL("image/png"));
-		isImageLoaded.set(true);
-		hideSpinner();
-	};
+	//	img.onload = function() {
+	//		imageDimensions = {
+	//			width : $(canvas).width(),
+	//			height : img.height * $(canvas).width() / img.width
+	//		}
+	//		context.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
+	//		inputContext.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
+	//		//						alert(canvas.toDataURL("image/png"));
+	//		isImageLoaded.set(true);
+	//		hideSpinner();
+	//	};
 	img.onerror = function(e) {
 		hideSpinner();
 		alert("Well that failed.\nMaybe this file isn't an image?");

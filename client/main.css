@@ -72,6 +72,10 @@ body {
 	margin-top: 18px;
 }
 
+#input-image {
+	display: none;
+}
+
 /* #progress-container { */
 /* 	width: 100%; */
 /* 	background-color: #aaa; */
@@ -202,3 +206,4 @@ input[type=range]::-ms-fill-upper {
 input[type=range]:focus::-ms-fill-upper {
 	background: orange;
 }
+
