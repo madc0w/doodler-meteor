@@ -41,7 +41,6 @@ Template.main.events({
 			context.arc(point[0], point[1], radius, 0, 2 * Math.PI);
 			context.fill();
 		}
-
 	},
 
 	"click #reset-button" : function(e) {
@@ -62,22 +61,6 @@ Template.main.events({
 			edgeImg.src = edge.toDataURL();
 		});
 
-		//		edgePoints = [];
-		//		const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-		//		context.fillStyle = white;
-		//		context.fillRect(0, 0, canvas.width, canvas.height);
-		//		for (var x = 1; x < canvas.width - 1; x++) {
-		//			for (y = 1; y < canvas.height - 1; y++) {
-		//				if (isWhite(getPixel(imageData, x, y)) && (
-		//					isBlack(getPixel(imageData, x - 1, y)) ||
-		//					isBlack(getPixel(imageData, x + 1, y)) ||
-		//					isBlack(getPixel(imageData, x, y - 1)) ||
-		//					isBlack(getPixel(imageData, x, y + 1)))) {
-		//					edgePoints.push([ x, y ]);
-		//					setPixel(context, x, y, black);
-		//				}
-		//			}
-		//		}
 		isEdgesComputed.set(true);
 		hideSpinner();
 	},
@@ -149,6 +132,20 @@ Template.main.onRendered(function() {
 		context.fillStyle = white;
 		context.fillRect(0, 0, canvas.width, canvas.height);
 		context.drawImage(edgeImg, 0, 0, canvas.width, canvas.height);
+
+		edgePoints = [];
+		const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+		for (var x = 1; x < canvas.width - 1; x++) {
+			for (y = 1; y < canvas.height - 1; y++) {
+				if (isWhite(getPixel(imageData, x, y))) {
+					setPixel(context, x, y, black);
+					edgePoints.push([ x, y ]);
+				} else {
+					setPixel(context, x, y, white);
+				}
+			}
+		}
+
 	};
 });
 
