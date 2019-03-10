@@ -1,6 +1,7 @@
 <head>
-<title>Doodler</title>
-<link href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet" />
+	<title>Doodler</title>
+	<link href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet" />
+	<link href="https://code.jquery.com/ui/1.10.4/themes/ui-lightness/jquery-ui.css" rel="stylesheet"/>
 </head>
 
 <body>{{> main }}
@@ -31,7 +32,10 @@
 					</label>
 				</div>
 				<div id="slider-container">
-					<input type="range" min="1" max="100" value="50" class="slider" id="contrast-range">
+					<label >
+						Cutoff
+						<input type="range" min="1" max="100" value="50" class="slider" id="contrast-range">
+					</label>
 				</div>
 			</div>
 			{{#if isContrastComputed}}
@@ -41,17 +45,29 @@
 					</div> 
 					<div>
 						<label>
-							<input type="radio" name="edge-detection-type" value="simple" id="edge-detection-type-simple" checked>
+							<input type="radio" name="edge-detection-type" value="simple" id="edge-detection-type-simple" />
 							Simple
 						</label>
 						<label>
-							<input type="radio" name="edge-detection-type" value="canny" id="edge-detection-type-canny">
+							<input type="radio" name="edge-detection-type" value="canny" id="edge-detection-type-canny"/>
 							Canny
 						</label>
 						<label>
-							<input type="radio" name="edge-detection-type" value="canny" id="edge-detection-type-none">
+							<input type="radio" name="edge-detection-type" value="none" id="edge-detection-type-none"/>
 							None
 						</label>
+						{{#if isShowCannyParams }}
+							<div id="canny-params">
+								<div id="hysteresis-threshold-range-container">
+									Hysteresis thresholds <br/>
+									<div id="hysteresis-threshold-range"></div>
+								</div>
+								<div>
+									Gaussian blur sigma: {{gaussianSigma}}<br/>
+									<input type="range" min="0" max="100" class="slider" id="gaussian-sigma-range">
+								</div>
+							</div>
+						{{/if}}
 					</div>
 					<div id="detect-edges-button" class="button">Detect Edges</div>
 				</div>

@@ -1,12 +1,20 @@
 import cannyEdgeDetector from "canny-edge-detector";
 import Image from "image-js";
 
+const gaussianSigmaDefault = 1.1;
 const black = "#000000";
 const white = "#ffffff";
 
+const hysteresisThresholds = {
+	low : 10,
+	high : 30
+};
+const edgeDetectionType = new ReactiveVar();
 const isContrastComputed = new ReactiveVar(false);
 const isImageLoaded = new ReactiveVar(false);
 const isEdgesComputed = new ReactiveVar(false);
+const isShowCannyParams = new ReactiveVar(false);
+const gaussianSigma = new ReactiveVar(1.1);
 
 var img = null;
 var edgeImg = null;
@@ -18,6 +26,11 @@ var imageDimensions = null;
 var edgePoints = [];
 
 Template.main.helpers({
+	gaussianSigma : function() {
+		const n = gaussianSigma.get();
+		return n.toFixed(2);
+	},
+
 	isImageLoaded : function() {
 		return isImageLoaded.get();
 	},
@@ -28,6 +41,10 @@ Template.main.helpers({
 
 	isEdgesComputed : function() {
 		return isEdgesComputed.get();
+	},
+
+	isShowCannyParams : function() {
+		return isShowCannyParams.get();
 	},
 });
 
@@ -56,48 +73,78 @@ Template.main.events({
 	},
 
 	"click #detect-edges-button" : function(e) {
-		const edgeAlgorithm = $("[name='edge-detection-type']:checked").val();
-		if (edgeAlgorithm == "none") {
-			isEdgesComputed.set(true);
-		} else {
-			showSpinner();
-			isEdgesComputed.set(false);
-			if (edgeAlgorithm == "canny") {
-				Image.load(canvas.toDataURL()).then(function(image) {
-					const gray = image.gray();
-					const edge = cannyEdgeDetector(gray);
-					edgeImg.src = edge.toDataURL();
-				});
-			} else if (edgeAlgorithm == "simple") {
+		const edgeAlgorithm = edgeDetectionType.get();
+		showSpinner();
+		isEdgesComputed.set(false);
+		Meteor.setTimeout(() => {
+			if (edgeAlgorithm == "none") {
 				edgePoints = [];
 				const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-				context.fillStyle = white;
-				context.fillRect(0, 0, canvas.width, canvas.height);
-				for (var x = 1; x < canvas.width - 1; x++) {
-					for (y = 1; y < canvas.height - 1; y++) {
-						if (isWhite(getPixel(imageData, x, y)) && (
-							isBlack(getPixel(imageData, x - 1, y)) ||
-							isBlack(getPixel(imageData, x + 1, y)) ||
-							isBlack(getPixel(imageData, x, y - 1)) ||
-							isBlack(getPixel(imageData, x, y + 1)))) {
+				for (var x = 0; x < canvas.width; x++) {
+					for (y = 0; y < canvas.height; y++) {
+						if (isBlack(getPixel(imageData, x, y))) {
 							edgePoints.push([ x, y ]);
-							setPixel(context, x, y, black);
 						}
 					}
 				}
 				isEdgesComputed.set(true);
 				hideSpinner();
+			} else {
+				if (edgeAlgorithm == "canny") {
+					Image.load(canvas.toDataURL()).then(function(image) {
+						const gray = image.gray();
+						const options = {
+							gaussianBlur : gaussianSigma.get(),
+							lowThreshold : hysteresisThresholds.low,
+							highThreshold : hysteresisThresholds.high,
+						};
+						const edge = cannyEdgeDetector(gray, options);
+						edgeImg.src = edge.toDataURL();
+					});
+				} else if (edgeAlgorithm == "simple") {
+					edgePoints = [];
+					const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+					context.fillStyle = white;
+					context.fillRect(0, 0, canvas.width, canvas.height);
+					for (var x = 1; x < canvas.width - 1; x++) {
+						for (y = 1; y < canvas.height - 1; y++) {
+							if (isWhite(getPixel(imageData, x, y)) && (
+								isBlack(getPixel(imageData, x - 1, y)) ||
+								isBlack(getPixel(imageData, x + 1, y)) ||
+								isBlack(getPixel(imageData, x, y - 1)) ||
+								isBlack(getPixel(imageData, x, y + 1)))) {
+								edgePoints.push([ x, y ]);
+								setPixel(context, x, y, black);
+							}
+						}
+					}
+					isEdgesComputed.set(true);
+					hideSpinner();
+				}
 			}
-		}
+		}, 0);
 	},
 
 	"change input[name='edge-detection-type']" : function(e) {
 		isEdgesComputed.set(false);
+		edgeDetectionType.set($("[name='edge-detection-type']:checked").val());
+		isShowCannyParams.set(edgeDetectionType.get() == "canny");
+
+		if (isShowCannyParams.get()) {
+			Meteor.setTimeout(initHysteresisRange, 0);
+		}
 	},
+
+	"click #contrast-range" : updateContrast,
 
 	"change #contrast-range" : updateContrast,
 
 	"change input[name='contrast-type']" : updateContrast,
+
+	"input #gaussian-sigma-range" : function(e) {
+		const value = parseInt($("#gaussian-sigma-range").val());
+		gaussianSigma.set(Math.pow(value / 50, 2));
+	},
 
 	"change #image-file-chooser" : function(e) {
 		isImageLoaded.set(false);
@@ -145,6 +192,8 @@ Template.main.onRendered(function() {
 	}
 	f(inputCanvas);
 	f(canvas);
+
+	$("#gaussian-sigma-range").val(50 * Math.sqrt(gaussianSigmaDefault));
 
 	img.onload = function() {
 		imageDimensions = {
@@ -269,8 +318,16 @@ function updateContrast() {
 			}
 		}
 		//			setProgress(1);
+
 		isContrastComputed.set(true);
 		hideSpinner();
+		Meteor.setTimeout(() => {
+			$("input[name='edge-detection-type']").prop("checked", false);
+			if (edgeDetectionType.get()) {
+				$("#edge-detection-type-" + edgeDetectionType.get()).prop("checked", true);
+			}
+			initHysteresisRange();
+		}, 0);
 	}, 40);
 }
 
@@ -303,4 +360,22 @@ function isBlack(pixel) {
 
 function isWhite(pixel) {
 	return pixel.red == 255 && pixel.green == 255 && pixel.blue == 255;
+}
+
+function initHysteresisRange() {
+	$("#hysteresis-threshold-range").slider({
+		range : true,
+		min : 0,
+		max : 100,
+		values : [ hysteresisThresholds.low, hysteresisThresholds.high ],
+		slide : function(event, ui) {
+			hysteresisThresholds.low = ui.values[0];
+			hysteresisThresholds.high = ui.values[1];
+			$($(".ui-slider-handle").get(0)).html(hysteresisThresholds.low);
+			$($(".ui-slider-handle").get(1)).html(hysteresisThresholds.high);
+		}
+	});
+
+	$($(".ui-slider-handle").get(0)).html(hysteresisThresholds.low);
+	$($(".ui-slider-handle").get(1)).html(hysteresisThresholds.high);
 }

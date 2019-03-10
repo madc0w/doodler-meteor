@@ -10,6 +10,7 @@ body {
 	display: inline-block;
 	vertical-align: top;
 	margin-right: 12px;
+	width: 300px;
 }
 
 .button {
@@ -53,7 +54,6 @@ body {
 /* #file-chooser-container { */
 /* 	padding-bottom: 16px; */
 /* } */
-
 #file-chooser-label [type=file] {
 	cursor: pointer;
 	display: block;
@@ -88,6 +88,34 @@ body {
 	display: none;
 }
 
+#hysteresis-threshold-range {
+	width: 85%;
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: 8px;
+	background: orange;
+	height: 8px;
+}
+
+#canny-params div {
+	margin-bottom: 12px;
+}
+
+.ui-widget-header {
+	background: #888 !important;
+}
+
+.ui-slider-handle {
+	background: white !important;
+	border-color: black !important;
+	color: black !important;
+	top: -8px !important;
+	padding-bottom: 4px !important;
+}
+
+/* #hysteresis-threshold-range-container { */
+/* } */
+
 /* #progress-container { */
 /* 	width: 100%; */
 /* 	background-color: #aaa; */
@@ -111,7 +139,8 @@ body {
 /*  slider styling follows */
 input[type=range] {
 	-webkit-appearance: none;
-	width: 85%;
+	width: 65%;
+	margin-left: 12px;
 	background: transparent;
 }
 
@@ -218,4 +247,3 @@ input[type=range]::-ms-fill-upper {
 input[type=range]:focus::-ms-fill-upper {
 	background: orange;
 }
-

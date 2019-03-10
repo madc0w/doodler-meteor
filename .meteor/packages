@@ -14,3 +14,4 @@ webapp@1.7.1                  # Serves a Meteor app over HTTP
 server-render@0.3.1           # Support for server-side rendering
 blaze-html-templates@1.0.4 # Compile .html files into Meteor Blaze views
 reactive-var
+mizzao:jquery-ui
