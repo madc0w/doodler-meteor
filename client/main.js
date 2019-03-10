@@ -33,13 +33,17 @@ Template.main.helpers({
 
 Template.main.events({
 	"click #draw-contours-button" : function(e) {
-		const radius = 4;
+		const radius = 6;
 		context.fillStyle = black;
 		for (var i in edgePoints) {
 			const point = edgePoints[i];
 			context.beginPath();
 			context.arc(point[0], point[1], radius, 0, 2 * Math.PI);
 			context.fill();
+		}
+		for (var i in edgePoints) {
+			const point = edgePoints[i];
+			setPixel(context, point[0], point[1], white);
 		}
 	},
 
@@ -52,17 +56,43 @@ Template.main.events({
 	},
 
 	"click #detect-edges-button" : function(e) {
-		showSpinner();
+		const edgeAlgorithm = $("[name='edge-detection-type']:checked").val();
+		if (edgeAlgorithm == "none") {
+			isEdgesComputed.set(true);
+		} else {
+			showSpinner();
+			isEdgesComputed.set(false);
+			if (edgeAlgorithm == "canny") {
+				Image.load(canvas.toDataURL()).then(function(image) {
+					const gray = image.gray();
+					const edge = cannyEdgeDetector(gray);
+					edgeImg.src = edge.toDataURL();
+				});
+			} else if (edgeAlgorithm == "simple") {
+				edgePoints = [];
+				const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+				context.fillStyle = white;
+				context.fillRect(0, 0, canvas.width, canvas.height);
+				for (var x = 1; x < canvas.width - 1; x++) {
+					for (y = 1; y < canvas.height - 1; y++) {
+						if (isWhite(getPixel(imageData, x, y)) && (
+							isBlack(getPixel(imageData, x - 1, y)) ||
+							isBlack(getPixel(imageData, x + 1, y)) ||
+							isBlack(getPixel(imageData, x, y - 1)) ||
+							isBlack(getPixel(imageData, x, y + 1)))) {
+							edgePoints.push([ x, y ]);
+							setPixel(context, x, y, black);
+						}
+					}
+				}
+				isEdgesComputed.set(true);
+				hideSpinner();
+			}
+		}
+	},
+
+	"change input[name='edge-detection-type']" : function(e) {
 		isEdgesComputed.set(false);
-
-		Image.load(canvas.toDataURL()).then(function(image) {
-			const gray = image.gray();
-			const edge = cannyEdgeDetector(gray);
-			edgeImg.src = edge.toDataURL();
-		});
-
-		isEdgesComputed.set(true);
-		hideSpinner();
 	},
 
 	"change #contrast-range" : updateContrast,
@@ -145,7 +175,8 @@ Template.main.onRendered(function() {
 				}
 			}
 		}
-
+		isEdgesComputed.set(true);
+		hideSpinner();
 	};
 });
 

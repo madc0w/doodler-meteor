@@ -15,31 +15,52 @@
 			</label>
 		</div>
 		{{#if isImageLoaded}}
-			<div>
-				<label>
-					<input type="radio" name="contrast-type" value="hue" id="contrast-type-hue">
-					Hue
-				</label>
-				<label>
-					<input type="radio" name="contrast-type" value="sat" id="contrast-type-sat">
-					Saturation
-				</label>
-				<label >
-					<input type="radio" name="contrast-type" value="val" id="contrast-type-val" checked>
-					Value
-				</label>
-			</div>
-			<div id="slider-container">
-				<input type="range" min="1" max="100" value="50" class="slider" id="contrast-range">
+			<div class="control-section">
+				<div>
+					<label>
+						<input type="radio" name="contrast-type" value="hue" id="contrast-type-hue">
+						Hue
+					</label>
+					<label>
+						<input type="radio" name="contrast-type" value="sat" id="contrast-type-sat">
+						Saturation
+					</label>
+					<label >
+						<input type="radio" name="contrast-type" value="val" id="contrast-type-val" checked>
+						Value
+					</label>
+				</div>
+				<div id="slider-container">
+					<input type="range" min="1" max="100" value="50" class="slider" id="contrast-range">
+				</div>
 			</div>
 			{{#if isContrastComputed}}
-				<div id="reset-button" class="button">Reset</div>
-				<div id="detect-edges-button" class="button">Detect Edges</div>
-				{{#if isEdgesComputed}}
+				<div class="control-section">
 					<div>
+						Edge detection algorithm
+					</div> 
+					<div>
+						<label>
+							<input type="radio" name="edge-detection-type" value="simple" id="edge-detection-type-simple" checked>
+							Simple
+						</label>
+						<label>
+							<input type="radio" name="edge-detection-type" value="canny" id="edge-detection-type-canny">
+							Canny
+						</label>
+						<label>
+							<input type="radio" name="edge-detection-type" value="canny" id="edge-detection-type-none">
+							None
+						</label>
+					</div>
+					<div id="detect-edges-button" class="button">Detect Edges</div>
+				</div>
+				{{#if isEdgesComputed}}
+					<div class="control-section">
 						<div id="draw-contours-button" class="button">Draw Contours</div>
 					</div>
 				{{/if}}
+				<div id="reset-button" class="button">Reset</div>
 			{{/if}}
 		{{/if}}
 		<div id="spinner">

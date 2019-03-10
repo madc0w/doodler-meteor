@@ -50,9 +50,9 @@ body {
 	display: none;
 }
 
-#file-chooser-container {
-	padding-bottom: 16px;
-}
+/* #file-chooser-container { */
+/* 	padding-bottom: 16px; */
+/* } */
 
 #file-chooser-label [type=file] {
 	cursor: pointer;
@@ -70,6 +70,18 @@ body {
 	text-align: center;
 	width: 100%;
 	margin-top: 18px;
+}
+
+.control-section {
+	margin-top: 12px;
+	border-radius: 8px;
+	border-width: 2px;
+	border-color: #222;
+	border-style: solid;
+	padding-top: 6px;
+	padding-bottom: 6px;
+	background-color: #eee;
+	line-height: 1.6em;
 }
 
 .hidden {
@@ -92,14 +104,14 @@ body {
 /* 	height: 16px; */
 /* } */
 
-#slider-container {
-	margin-top: 12px;
-}
+/* #slider-container { */
+/* 	margin-top: 12px; */
+/* } */
 
 /*  slider styling follows */
 input[type=range] {
 	-webkit-appearance: none;
-	width: 100%;
+	width: 85%;
 	background: transparent;
 }
 
