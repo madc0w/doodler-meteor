@@ -14,6 +14,7 @@ const isContrastComputed = new ReactiveVar(false);
 const isImageLoaded = new ReactiveVar(false);
 const isEdgesComputed = new ReactiveVar(false);
 const isShowCannyParams = new ReactiveVar(false);
+const isCountourDrawn = new ReactiveVar(false);
 const gaussianSigma = new ReactiveVar(1.1);
 const contourRadius = new ReactiveVar(6);
 
@@ -48,30 +49,50 @@ Template.main.helpers({
 		return isShowCannyParams.get();
 	},
 
+	isCountourDrawn : function() {
+		return isCountourDrawn.get();
+	},
+
 	contourRadius : function() {
 		return contourRadius.get();
 	},
 });
 
 Template.main.events({
+	"click #save-image-button" : function(e) {
+		const link = document.createElement("a");
+		const base64 = canvas.toDataURL();
+		link.setAttribute("href", base64);
+		link.setAttribute("download", "contour-doodler-output.png");
+		//		link.setAttribute("target", "_blank");
+		link.click();
+	},
+
 	"click #draw-contours-button" : function(e) {
-		const radius = contourRadius.get();
-		context.fillStyle = black;
-		for (var i in edgePoints) {
-			const point = edgePoints[i];
-			context.beginPath();
-			context.arc(point[0], point[1], radius, 0, 2 * Math.PI);
-			context.fill();
-		}
-		for (var i in edgePoints) {
-			const point = edgePoints[i];
-			setPixel(context, point[0], point[1], white);
-		}
+		isCountourDrawn.set(false);
+		showSpinner();
+		Meteor.setTimeout(() => {
+			const radius = contourRadius.get();
+			context.fillStyle = black;
+			for (var i in edgePoints) {
+				const point = edgePoints[i];
+				context.beginPath();
+				context.arc(point[0], point[1], radius, 0, 2 * Math.PI);
+				context.fill();
+			}
+			for (var i in edgePoints) {
+				const point = edgePoints[i];
+				setPixel(context, point[0], point[1], white);
+			}
+			hideSpinner();
+			isCountourDrawn.set(true);
+		}, 0);
 	},
 
 	"click #reset-button" : function(e) {
 		isContrastComputed.set(false);
 		isEdgesComputed.set(false);
+		isCountourDrawn.set(false);
 		context.clearRect(0, 0, canvas.width, canvas.height);
 		context.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
 		inputContext.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
@@ -81,6 +102,7 @@ Template.main.events({
 		const edgeAlgorithm = edgeDetectionType.get();
 		showSpinner();
 		isEdgesComputed.set(false);
+		isCountourDrawn.set(false);
 		Meteor.setTimeout(() => {
 			if (edgeAlgorithm == "none") {
 				edgePoints = [];
@@ -132,6 +154,7 @@ Template.main.events({
 
 	"change input[name='edge-detection-type']" : function(e) {
 		isEdgesComputed.set(false);
+		isCountourDrawn.set(false);
 		edgeDetectionType.set($("[name='edge-detection-type']:checked").val());
 		isShowCannyParams.set(edgeDetectionType.get() == "canny");
 
@@ -160,6 +183,7 @@ Template.main.events({
 		isImageLoaded.set(false);
 		isContrastComputed.set(false);
 		isEdgesComputed.set(false);
+		isCountourDrawn.set(false);
 		if (typeof window.FileReader !== "function") {
 			alert("The browser you are using sucks.\nTry using Firefox or Chrome instead.");
 			return;
@@ -182,7 +206,7 @@ Template.main.events({
 					img.src = image.toDataURL();
 				}).then(null, function(err) {
 					hideSpinner();
-					alert("Well that failed.\nMaybe this file isn't an image?");
+					alert("Well that failed.\n\nMaybe this file isn't an image?");
 				});
 			};
 			fr.readAsDataURL(file);
@@ -204,6 +228,11 @@ Template.main.onRendered(function() {
 	}
 	f(inputCanvas);
 	f(canvas);
+
+	window.addEventListener("resize", function() {
+		f(inputCanvas);
+		f(canvas);
+	});
 
 	$("#gaussian-sigma-range").val(50 * Math.sqrt(gaussianSigmaDefault));
 
