@@ -9,12 +9,13 @@ const hysteresisThresholds = {
 	low : 10,
 	high : 30
 };
-const edgeDetectionType = new ReactiveVar();
+const edgeDetectionType = new ReactiveVar("simple");
 const isContrastComputed = new ReactiveVar(false);
 const isImageLoaded = new ReactiveVar(false);
 const isEdgesComputed = new ReactiveVar(false);
 const isShowCannyParams = new ReactiveVar(false);
 const gaussianSigma = new ReactiveVar(1.1);
+const contourRadius = new ReactiveVar(6);
 
 var img = null;
 var edgeImg = null;
@@ -46,11 +47,15 @@ Template.main.helpers({
 	isShowCannyParams : function() {
 		return isShowCannyParams.get();
 	},
+
+	contourRadius : function() {
+		return contourRadius.get();
+	},
 });
 
 Template.main.events({
 	"click #draw-contours-button" : function(e) {
-		const radius = 6;
+		const radius = contourRadius.get();
 		context.fillStyle = black;
 		for (var i in edgePoints) {
 			const point = edgePoints[i];
@@ -146,8 +151,15 @@ Template.main.events({
 		gaussianSigma.set(Math.pow(value / 50, 2));
 	},
 
+	"input #contour-radius-range" : function(e) {
+		const value = parseInt($("#contour-radius-range").val());
+		contourRadius.set(value);
+	},
+
 	"change #image-file-chooser" : function(e) {
 		isImageLoaded.set(false);
+		isContrastComputed.set(false);
+		isEdgesComputed.set(false);
 		if (typeof window.FileReader !== "function") {
 			alert("The browser you are using sucks.\nTry using Firefox or Chrome instead.");
 			return;
