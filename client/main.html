@@ -73,13 +73,24 @@
 				</div>
 				{{#if isEdgesComputed}}
 					<div class="control-section">
-						<label >
-							Radius: {{contourRadius}}<br/>
-							<input type="range" min="2" max="20" value="{{contourRadius}}" class="slider" id="contour-radius-range">
-						</label>
-						<div id="draw-contours-button" class="button">Draw Contours</div>
 						{{#if isCountourDrawn}}
 							<div id="save-image-button" class="button">Save Image</div>
+						{{else}}
+							<div>
+								<label >
+									Radius: {{contourRadius}}<br/>
+									<input type="range" min="2" max="20" value="{{contourRadius}}" class="slider" id="contour-radius-range">
+								</label>
+							</div>
+							<div>
+								<label>
+									<input id="fuzzy-contours-checkbox"  type="checkbox" />
+									Fuzzy contours?
+								</label>
+							</div>
+							<div>
+								<div id="draw-contours-button" class="button">Draw Contours</div>
+							</div>
 						{{/if}}
 					</div>
 				{{/if}}

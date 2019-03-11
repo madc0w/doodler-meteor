@@ -73,9 +73,16 @@ Template.main.events({
 		showSpinner();
 		Meteor.setTimeout(() => {
 			const radius = contourRadius.get();
+			const isFuzzy = $("#fuzzy-contours-checkbox").is(":checked");
 			context.fillStyle = black;
 			for (var i in edgePoints) {
 				const point = edgePoints[i];
+				if (isFuzzy) {
+					const grd = context.createRadialGradient(point[0], point[1], 0, point[0], point[1], radius);
+					grd.addColorStop(0, black);
+					grd.addColorStop(1, "rgba(255, 255, 255, 0)");
+					context.fillStyle = grd;
+				}
 				context.beginPath();
 				context.arc(point[0], point[1], radius, 0, 2 * Math.PI);
 				context.fill();
@@ -396,7 +403,8 @@ function setPixel(context, x, y, color) {
 }
 
 function isBlack(pixel) {
-	return pixel.red == 0 && pixel.green == 0 && pixel.blue == 0;
+	return !isWhite(pixel);
+//	return pixel.red == 0 && pixel.green == 0 && pixel.blue == 0;
 }
 
 function isWhite(pixel) {
