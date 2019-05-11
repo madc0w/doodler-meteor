@@ -20,11 +20,12 @@ const contourRadius = new ReactiveVar(6);
 
 var img = null;
 var edgeImg = null;
-var canvas = null;
+var previewCanvas = null;
+var previewContext = null;
+var outputContext = null;
 var inputCanvas = null;
-var context = null;
 var inputContext = null;
-var imageDimensions = null;
+var outputCanvas = null;
 var edgePoints = [];
 
 Template.main.helpers({
@@ -61,11 +62,13 @@ Template.main.helpers({
 Template.main.events({
 	"click #save-image-button" : function(e) {
 		const link = document.createElement("a");
-		const base64 = canvas.toDataURL();
+		const base64 = outputCanvas.toDataURL();
 		link.setAttribute("href", base64);
 		link.setAttribute("download", "contour-doodler-output.png");
 		//		link.setAttribute("target", "_blank");
 		link.click();
+		copyToPreview();
+		console.log("saved");
 	},
 
 	"click #draw-contours-button" : function(e) {
@@ -74,24 +77,25 @@ Template.main.events({
 		Meteor.setTimeout(() => {
 			const radius = contourRadius.get();
 			const isFuzzy = $("#fuzzy-contours-checkbox").is(":checked");
-			context.fillStyle = black;
+			outputContext.fillStyle = black;
 			for (var i in edgePoints) {
 				const point = edgePoints[i];
 				if (isFuzzy) {
-					const grd = context.createRadialGradient(point[0], point[1], 0, point[0], point[1], radius);
+					const grd = outputContext.createRadialGradient(point[0], point[1], 0, point[0], point[1], radius);
 					grd.addColorStop(0, black);
 					grd.addColorStop(1, "rgba(255, 255, 255, 0)");
-					context.fillStyle = grd;
+					outputContext.fillStyle = grd;
 				}
-				context.beginPath();
-				context.arc(point[0], point[1], radius, 0, 2 * Math.PI);
-				context.fill();
+				outputContext.beginPath();
+				outputContext.arc(point[0], point[1], radius, 0, 2 * Math.PI);
+				outputContext.fill();
 			}
 			for (var i in edgePoints) {
 				const point = edgePoints[i];
-				setPixel(context, point[0], point[1], white);
+				setPixel(outputContext, point[0], point[1], white);
 			}
 			hideSpinner();
+			copyToPreview();
 			isCountourDrawn.set(true);
 		}, 0);
 	},
@@ -100,9 +104,9 @@ Template.main.events({
 		isContrastComputed.set(false);
 		isEdgesComputed.set(false);
 		isCountourDrawn.set(false);
-		context.clearRect(0, 0, canvas.width, canvas.height);
-		context.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
-		inputContext.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
+		previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+		outputContext.clearRect(0, 0, outputCanvas.width, outputCanvas.height);
+		repaint();
 	},
 
 	"click #detect-edges-button" : function(e) {
@@ -113,9 +117,9 @@ Template.main.events({
 		Meteor.setTimeout(() => {
 			if (edgeAlgorithm == "none") {
 				edgePoints = [];
-				const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-				for (var x = 0; x < canvas.width; x++) {
-					for (y = 0; y < canvas.height; y++) {
+				const imageData = outputContext.getImageData(0, 0, outputCanvas.width, outputCanvas.height);
+				for (var x = 0; x < outputCanvas.width; x++) {
+					for (y = 0; y < outputCanvas.height; y++) {
 						if (isBlack(getPixel(imageData, x, y))) {
 							edgePoints.push([ x, y ]);
 						}
@@ -123,38 +127,37 @@ Template.main.events({
 				}
 				isEdgesComputed.set(true);
 				hideSpinner();
-			} else {
-				if (edgeAlgorithm == "canny") {
-					Image.load(canvas.toDataURL()).then(function(image) {
-						const gray = image.gray();
-						const options = {
-							gaussianBlur : gaussianSigma.get(),
-							lowThreshold : hysteresisThresholds.low,
-							highThreshold : hysteresisThresholds.high,
-						};
-						const edge = cannyEdgeDetector(gray, options);
-						edgeImg.src = edge.toDataURL();
-					});
-				} else if (edgeAlgorithm == "simple") {
-					edgePoints = [];
-					const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-					context.fillStyle = white;
-					context.fillRect(0, 0, canvas.width, canvas.height);
-					for (var x = 1; x < canvas.width - 1; x++) {
-						for (y = 1; y < canvas.height - 1; y++) {
-							if (isWhite(getPixel(imageData, x, y)) && (
-								isBlack(getPixel(imageData, x - 1, y)) ||
-								isBlack(getPixel(imageData, x + 1, y)) ||
-								isBlack(getPixel(imageData, x, y - 1)) ||
-								isBlack(getPixel(imageData, x, y + 1)))) {
-								edgePoints.push([ x, y ]);
-								setPixel(context, x, y, black);
-							}
+			} else if (edgeAlgorithm == "canny") {
+				Image.load(outputCanvas.toDataURL()).then(function(image) {
+					const gray = image.gray();
+					const options = {
+						gaussianBlur : gaussianSigma.get(),
+						lowThreshold : hysteresisThresholds.low,
+						highThreshold : hysteresisThresholds.high,
+					};
+					const edge = cannyEdgeDetector(gray, options);
+					edgeImg.src = edge.toDataURL();
+				});
+			} else if (edgeAlgorithm == "simple") {
+				edgePoints = [];
+				const imageData = outputContext.getImageData(0, 0, outputCanvas.width, outputCanvas.height);
+				outputContext.fillStyle = white;
+				outputContext.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
+				for (var x = 1; x < outputCanvas.width - 1; x++) {
+					for (y = 1; y < outputCanvas.height - 1; y++) {
+						if (isWhite(getPixel(imageData, x, y)) && (
+							isBlack(getPixel(imageData, x - 1, y)) ||
+							isBlack(getPixel(imageData, x + 1, y)) ||
+							isBlack(getPixel(imageData, x, y - 1)) ||
+							isBlack(getPixel(imageData, x, y + 1)))) {
+							edgePoints.push([ x, y ]);
+							setPixel(outputContext, x, y, black);
 						}
 					}
-					isEdgesComputed.set(true);
-					hideSpinner();
 				}
+				isEdgesComputed.set(true);
+				copyToPreview();
+				hideSpinner();
 			}
 		}, 0);
 	},
@@ -198,14 +201,14 @@ Template.main.events({
 
 		const input = $("#image-file-chooser")[0];
 		if (!input) {
-			alert("Failed to find the image-file-chooser element.");
+			alert("Failed to find the image-file-chooser element... somehow.");
 		} else if (!input.files) {
 			alert("The browser you are using sucks.\nTry using Firefox or Chrome instead.");
 		} else if (!input.files[0]) {
 			alert("Please select a file before clicking 'Load'.");
 		} else {
 			showSpinner();
-			context.clearRect(0, 0, canvas.width, canvas.height);
+			previewContext.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
 			const file = input.files[0];
 			const fr = new FileReader();
 			fr.onload = function() {
@@ -226,53 +229,52 @@ Template.main.onRendered(function() {
 	img = $("#input-image")[0];
 	edgeImg = $("#edge-image")[0];
 	inputCanvas = $("#input-canvas")[0];
-	canvas = $("#output-canvas")[0];
-	context = canvas.getContext("2d");
+	previewCanvas = $("#preview-canvas")[0];
+	outputCanvas = $("#output-canvas")[0];
+	previewContext = previewCanvas.getContext("2d");
 	inputContext = inputCanvas.getContext("2d");
+	outputContext = outputCanvas.getContext("2d");
 	function f(c) {
 		c.setAttribute("width", innerWidth - $("#controls").width() - 60);
 		c.setAttribute("height", innerHeight - 40);
 	}
 	f(inputCanvas);
-	f(canvas);
+	f(previewCanvas);
 
 	window.addEventListener("resize", function() {
 		f(inputCanvas);
-		f(canvas);
+		f(previewCanvas);
 	});
 
 	$("#gaussian-sigma-range").val(50 * Math.sqrt(gaussianSigmaDefault));
 
 	img.onload = function() {
-		imageDimensions = {
-			width : $(canvas).width(),
-			height : img.height * $(canvas).width() / img.width
-		}
-		context.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
-		inputContext.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
-		//						alert(canvas.toDataURL("image/png"));
+		repaint();
+		//						alert(previewCanvas.toDataURL("image/png"));
 		isImageLoaded.set(true);
 		hideSpinner();
 	};
 
 	edgeImg.onload = function() {
-		context.fillStyle = white;
-		context.fillRect(0, 0, canvas.width, canvas.height);
-		context.drawImage(edgeImg, 0, 0, canvas.width, canvas.height);
+		outputContext.fillStyle = white;
+		outputContext.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
+		outputContext.drawImage(edgeImg, 0, 0, outputCanvas.width, outputCanvas.height);
 
 		edgePoints = [];
-		const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-		for (var x = 1; x < canvas.width - 1; x++) {
-			for (y = 1; y < canvas.height - 1; y++) {
+		const imageData = outputContext.getImageData(0, 0, outputCanvas.width, outputCanvas.height);
+		for (var x = 1; x < outputCanvas.width - 1; x++) {
+			for (y = 1; y < outputCanvas.height - 1; y++) {
 				if (isWhite(getPixel(imageData, x, y))) {
-					setPixel(context, x, y, black);
+					setPixel(outputContext, x, y, black);
 					edgePoints.push([ x, y ]);
 				} else {
-					setPixel(context, x, y, white);
+					setPixel(previewContext, x, y, white);
 				}
 			}
 		}
 		isEdgesComputed.set(true);
+		copyToPreview();
+
 		hideSpinner();
 	};
 });
@@ -315,7 +317,7 @@ function updateContrast() {
 	showSpinner();
 	Meteor.setTimeout(() => {
 		const contrast = parseInt($("#contrast-range").val());
-		const imageData = inputContext.getImageData(0, 0, canvas.width, canvas.height);
+		const imageData = inputContext.getImageData(0, 0, inputCanvas.width, inputCanvas.height);
 		const contrastType = $("[name='contrast-type']:checked").val();
 		var cutoff = contrast / 100;
 		if (contrastType == "val") {
@@ -352,7 +354,7 @@ function updateContrast() {
 				//						}
 				}
 
-				setPixel(context, x, y, value < cutoff ? black : white);
+				setPixel(outputContext, x, y, value < cutoff ? black : white);
 
 				//					// RGB
 				//					//					const offset = ((y * (imageData.width * 4)) + (x * 4));
@@ -366,6 +368,8 @@ function updateContrast() {
 			}
 		}
 		//			setProgress(1);
+
+		copyToPreview();
 
 		isContrastComputed.set(true);
 		hideSpinner();
@@ -427,4 +431,22 @@ function initHysteresisRange() {
 
 	$($(".ui-slider-handle").get(0)).html(hysteresisThresholds.low);
 	$($(".ui-slider-handle").get(1)).html(hysteresisThresholds.high);
+}
+
+function repaint() {
+	const imageDimensions = {
+		width : $(previewCanvas).width(),
+		height : img.height * $(previewCanvas).width() / img.width
+	}
+	previewContext.drawImage(img, 0, 0, imageDimensions.width, imageDimensions.height);
+	inputCanvas.setAttribute("width", img.width);
+	inputCanvas.setAttribute("height", img.height);
+	outputCanvas.setAttribute("width", img.width);
+	outputCanvas.setAttribute("height", img.height);
+
+	inputContext.drawImage(img, 0, 0, img.width, img.height);
+}
+
+function copyToPreview() {
+	previewContext.drawImage(outputCanvas, 0, 0, outputCanvas.width, outputCanvas.height, 0, 0, previewCanvas.width, img.height * previewCanvas.width / img.width);
 }

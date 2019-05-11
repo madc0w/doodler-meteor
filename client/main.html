@@ -14,6 +14,7 @@
 			<label id="file-chooser-label" class="button">Choose Image File 
 				<input type="file" id="image-file-chooser" />
 			</label>
+			<br/>
 		</div>
 		{{#if isImageLoaded}}
 			<div class="control-section">
@@ -105,9 +106,10 @@
 <!-- 		</div> -->
 	</div>
 	<div id="output">
-		<canvas id="output-canvas" width="300" height="600"></canvas>
+		<canvas id="preview-canvas" width="300" height="600"></canvas>
 	</div>
 	<canvas id="input-canvas" width="300" height="600"></canvas>
+	<canvas id="output-canvas" ></canvas>
 	<img id="input-image" class="hidden"/>
 	<img id="edge-image" class="hidden"/>
 </div>

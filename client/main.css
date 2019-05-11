@@ -42,12 +42,16 @@ body {
 	display: inline-block;
 }
 
-#output-canvas {
+#preview-canvas {
 	background-color: #eee;
 	border-radius: 6px;
 }
 
 #input-canvas {
+	display: none;
+}
+
+#output-canvas {
 	display: none;
 }
 
