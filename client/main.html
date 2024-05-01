@@ -1,116 +1,169 @@
 <head>
 	<title>Doodler</title>
 	<link href="https://fonts.googleapis.com/css?family=Lato" rel="stylesheet" />
-	<link href="https://code.jquery.com/ui/1.10.4/themes/ui-lightness/jquery-ui.css" rel="stylesheet"/>
+	<link
+		href="https://code.jquery.com/ui/1.10.4/themes/ui-lightness/jquery-ui.css"
+		rel="stylesheet"
+	/>
 </head>
 
-<body>{{> main }}
+<body>
+	{{> main }}
 </body>
 
 <template name="main">
-<div id="main">
-	<div id="controls">
-		<div id="file-chooser-container">
-			<label id="file-chooser-label" class="button">Choose Image File 
-				<input type="file" id="image-file-chooser" />
-			</label>
-			<br/>
-		</div>
-		{{#if isImageLoaded}}
+	<div id="main">
+		<div id="controls">
+			<div id="file-chooser-container">
+				<label id="file-chooser-label" class="button"
+					>Choose Image File
+					<input type="file" id="image-file-chooser" />
+				</label>
+				<br />
+			</div>
+			{{#if isImageLoaded}}
 			<div class="control-section">
 				<div>
 					<label>
-						<input type="radio" name="contrast-type" value="hue" id="contrast-type-hue">
+						<input
+							type="radio"
+							name="contrast-type"
+							value="hue"
+							id="contrast-type-hue"
+						/>
 						Hue
 					</label>
 					<label>
-						<input type="radio" name="contrast-type" value="sat" id="contrast-type-sat">
+						<input
+							type="radio"
+							name="contrast-type"
+							value="sat"
+							id="contrast-type-sat"
+						/>
 						Saturation
 					</label>
-					<label >
-						<input type="radio" name="contrast-type" value="val" id="contrast-type-val" checked>
+					<label>
+						<input
+							type="radio"
+							name="contrast-type"
+							value="val"
+							id="contrast-type-val"
+							checked
+						/>
 						Value
 					</label>
 				</div>
 				<div id="slider-container">
-					<label >
+					<label>
 						Cutoff
-						<input type="range" min="1" max="100" value="50" class="slider" id="contrast-range">
+						<input
+							type="range"
+							min="1"
+							max="100"
+							value="50"
+							class="slider"
+							id="contrast-range"
+						/>
 					</label>
 				</div>
 			</div>
 			{{#if isContrastComputed}}
-				<div class="control-section">
-					<div>
-						Edge detection algorithm
-					</div> 
-					<div>
-						<label>
-							<input type="radio" name="edge-detection-type" value="simple" id="edge-detection-type-simple" />
-							Simple
-						</label>
-						<label>
-							<input type="radio" name="edge-detection-type" value="canny" id="edge-detection-type-canny"/>
-							Canny
-						</label>
-						<label>
-							<input type="radio" name="edge-detection-type" value="none" id="edge-detection-type-none"/>
-							None
-						</label>
-						{{#if isShowCannyParams }}
-							<div id="canny-params">
-								<div id="hysteresis-threshold-range-container">
-									Hysteresis thresholds <br/>
-									<div id="hysteresis-threshold-range"></div>
-								</div>
-								<div>
-									Gaussian blur sigma: {{gaussianSigma}}<br/>
-									<input type="range" min="0" max="100" class="slider" id="gaussian-sigma-range">
-								</div>
-							</div>
-						{{/if}}
+			<div class="control-section">
+				<div>Edge detection algorithm</div>
+				<div>
+					<label>
+						<input
+							type="radio"
+							name="edge-detection-type"
+							value="simple"
+							id="edge-detection-type-simple"
+						/>
+						Simple
+					</label>
+					<label>
+						<input
+							type="radio"
+							name="edge-detection-type"
+							value="canny"
+							id="edge-detection-type-canny"
+						/>
+						Canny
+					</label>
+					<label>
+						<input
+							type="radio"
+							name="edge-detection-type"
+							value="none"
+							id="edge-detection-type-none"
+						/>
+						None
+					</label>
+					{{#if isShowCannyParams }}
+					<div id="canny-params">
+						<div id="hysteresis-threshold-range-container">
+							Hysteresis thresholds <br />
+							<div id="hysteresis-threshold-range"></div>
+						</div>
+						<div>
+							Gaussian blur sigma: {{gaussianSigma}}<br />
+							<input
+								type="range"
+								min="0"
+								max="100"
+								class="slider"
+								id="gaussian-sigma-range"
+							/>
+						</div>
 					</div>
-					<div id="detect-edges-button" class="button">Detect Edges</div>
+					{{/if}}
 				</div>
-				{{#if isEdgesComputed}}
-					<div class="control-section">
-						{{#if isCountourDrawn}}
-							<div id="save-image-button" class="button">Save Image</div>
-						{{else}}
-							<div>
-								<label >
-									Radius: {{contourRadius}}<br/>
-									<input type="range" min="2" max="20" value="{{contourRadius}}" class="slider" id="contour-radius-range">
-								</label>
-							</div>
-							<div>
-								<label>
-									<input id="fuzzy-contours-checkbox"  type="checkbox" />
-									Fuzzy contours?
-								</label>
-							</div>
-							<div>
-								<div id="draw-contours-button" class="button">Draw Contours</div>
-							</div>
-						{{/if}}
-					</div>
+				<div id="detect-edges-button" class="button">Detect Edges</div>
+			</div>
+			{{#if isEdgesComputed}}
+			<div class="control-section">
+				{{#if isContourDrawn}}
+				<div id="save-image-button" class="button">Save Image</div>
+				{{else}}
+				<div>
+					<label>
+						Radius: {{contourRadius}}<br />
+						<input
+							type="range"
+							min="2"
+							max="20"
+							value="{{contourRadius}}"
+							class="slider"
+							id="contour-radius-range"
+						/>
+					</label>
+				</div>
+				<div>
+					<label>
+						<input id="fuzzy-contours-checkbox" type="checkbox" />
+						Fuzzy contours?
+					</label>
+				</div>
+				<div>
+					<div id="draw-contours-button" class="button">Draw Contours</div>
+				</div>
 				{{/if}}
-				<div id="reset-button" class="button">Reset</div>
+			</div>
 			{{/if}}
-		{{/if}}
-		<div id="spinner">
-			<img src="spinner.gif"/>		
+			<div id="reset-button" class="button">Reset</div>
+			{{/if}} {{/if}}
+			<div id="spinner">
+				<img src="spinner.gif" />
+			</div>
+			<!-- 		<div id="progress-container"> -->
+			<!-- 			<div id="progress"></div> -->
+			<!-- 		</div> -->
 		</div>
-<!-- 		<div id="progress-container"> -->
-<!-- 			<div id="progress"></div> -->
-<!-- 		</div> -->
+		<div id="output">
+			<canvas id="preview-canvas" width="300" height="600"></canvas>
+		</div>
+		<canvas id="input-canvas" width="300" height="600"></canvas>
+		<canvas id="output-canvas"></canvas>
+		<img id="input-image" class="hidden" />
+		<img id="edge-image" class="hidden" />
 	</div>
-	<div id="output">
-		<canvas id="preview-canvas" width="300" height="600"></canvas>
-	</div>
-	<canvas id="input-canvas" width="300" height="600"></canvas>
-	<canvas id="output-canvas" ></canvas>
-	<img id="input-image" class="hidden"/>
-	<img id="edge-image" class="hidden"/>
-</div>
 </template>
